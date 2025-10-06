@@ -1,0 +1,92 @@
+---
+title: "Background correction metrics report"
+author: "Hellmann Lab"
+date: "`r format(Sys.time(), '%d %B, %Y %H:%M:%S')`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide 
+    code_download: true 
+    number_sections: true
+    df_print: kable 
+    theme: lumen
+params:
+  dataset_name: NULL 
+  dummy: NULL
+  knn: NULL
+  knn_pc: NULL 
+  csv_knn_sum: NULL
+  csv_knn_pc: NULL
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include = FALSE}
+dummy <- params$dummy
+knn_sum <- params$knn
+knn_pc <- params$knn_pc
+
+```
+
+## Dummy
+
+```{r dummy-table, echo=FALSE}
+if (nrow(dummy) == 0) {
+  cat("No dummy metrics available.\n")
+} else {
+  dummy |>
+    dplyr::select(dataset, n_cells, seed, mean_abs_diff, median_abs_diff, p95_abs_diff) |>
+    dplyr::mutate(
+      dplyr::across(dplyr::contains("abs_diff"), ~ round(.x, 6))
+    ) |>
+    knitr::kable(caption = "Dummy metrics")
+}
+
+```
+
+## kNN
+
+```{r pressure, echo=FALSE}
+if (nrow(knn_sum) == 0) {
+  cat("No kNN summary available.\n")
+} else {
+  knitr::kable(dplyr::arrange(knn_sum, k), caption = "kNN overlap summary")
+}
+
+```
+
+
+```{r knn-percell-prep, echo=FALSE}
+# prep
+df_pc <- knn_pc
+df_pc$k    <- factor(as.integer(df_pc$k), levels = sort(unique(as.integer(df_pc$k))))
+df_pc$frac <- as.numeric(df_pc$frac)
+
+summ_pc <- df_pc |>
+  dplyr::group_by(k) |>
+  dplyr::summarise(n = dplyr::n(), .groups = "drop")
+
+ggplot2::ggplot(df_pc, ggplot2::aes(x = k, y = frac)) +
+  ggplot2::geom_boxplot(
+    width = 0.28,
+    outlier.shape = 16,     # show outliers
+    outlier.size  = 1.2,
+    outlier.alpha = 0.6,
+    color = "grey20"
+  ) +
+  # blue median line overlay
+  ggplot2::stat_summary(
+    fun = stats::median, geom = "crossbar",
+    width = 0.5, fatten = 0, color = "steelblue", linewidth = 0.6
+  ) +
+  ggplot2::geom_text(
+    data = summ_pc, ggplot2::aes(y = 0.86, label = paste0("n=", n)),
+    vjust = 1, size = 3
+  ) +
+  ggplot2::coord_cartesian(ylim = c(0.85, 1.00)) +
+  ggplot2::scale_y_continuous(labels = function(x) paste0(x*100, "%")) +
+  ggplot2::labs(title = "Per-cell fractional overlap by k", x = "k", y = "Fractional overlap") +
+  ggplot2::theme_classic()
+```
+
