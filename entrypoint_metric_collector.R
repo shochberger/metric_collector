@@ -10,7 +10,7 @@ library(rmarkdown)
 # CLI
 p <- ArgumentParser("Simple SoupX metrics collector")
 p$add_argument("--output_dir", "-o", required = TRUE)
-#p$add_argument("--name", "-n", required = TRUE)
+p$add_argument("--name", "-n", required = TRUE)
 p$add_argument("--m1_dummy.summary", dest = "dummy_json", required = TRUE)
 p$add_argument("--metrics_knn.summary", nargs = "+", dest = "knn_summary", help = "kNN summary .rds files (e.g. k-15 k-30 k-45)", required = TRUE)
 p$add_argument("--metrics_knn.percell", nargs = "+", dest = "knn_percell", help = "kNN per-cell .rds files (one per k)", required = TRUE)
