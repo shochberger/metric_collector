@@ -43,55 +43,6 @@ knn_pc <- bind_rows(lapply(args$knn_percell, function(fp) {
   df
 }))
 
-
-# Load kNN metrics
-#knn <- bind_rows(lapply(args$knn_summary, function(fp) {
-#  summary_file <- list.files(dir, pattern = "\\.kNN_overlap\\.rds$", full.names = TRUE)
-#  df <- readRDS(dir)
-#  df$k <- as.integer(gsub("k-", "", basename(fp)))
-#  df$dataset <- args$name
-#  df
-#}))
-
-#knn_pc <- bind_rows(lapply(args$knn_percell, function(fp) {
-#  pc_file <- list.files(dir, pattern = "_per_cell\\.rds$", full.names = TRUE)
-#  df <- readRDS(fp)
-#  df$k <- as.integer(gsub("k-", "", basename(fp)))
-#  df$dataset <- args$name
-#  df
-#}))
-
-# Find all performance files
-#perf_files <- list.files(
-#  path = args$perf_root,
-#  pattern = "_performance\\.txt$",
-#  recursive = TRUE,
-#  full.names = TRUE
-#)
-
-#perf_raw <- bind_rows(lapply(perf_files, function(fp) {
-#  df <- readr::read_tsv(fp, show_col_types = FALSE)
-#  df$stage <- basename(dirname(fp))
-#  df$file <- fp
-#  df
-#}))
-
-# Convert numeric columns
-#num_cols <- c("s", "max_rss", "max_vms", "max_uss", "max_pss", "io_in", "io_out", "mean_load", "cpu_time")
-
-#perf_raw <- perf_raw %>%
-#  mutate(across(all_of(num_cols), ~ as.numeric(.)))
-
-# Quick summary per stage
-#perf_summary <- perf_raw %>%
-#  group_by(stage) %>%
-#  summarise(
-#    runtime = median(s, na.rm = TRUE),
-#    memory  = median(max_rss, na.rm = TRUE),
-#    cpu     = median(cpu_time, na.rm = TRUE),
-#    .groups = "drop"
-#  )
-
 # helper: where this script lives
 get_script_dir <- function() {
   ca <- commandArgs(trailingOnly = FALSE)
@@ -101,17 +52,15 @@ get_script_dir <- function() {
 }
 
 # Write CSVs
-csv_knn_sum <- file.path(args$output_dir, paste0(args$name, "_metrics_knn_summary.csv"))
-csv_knn_pc  <- file.path(args$output_dir, paste0(args$name, "_metrics_per_cell.csv"))
-#csv_perf <- file.path(args$output_dir, paste0(args$name, "_performance.csv"))
-#write_csv(perf_summary, csv_perf)
+csv_knn_sum <- file.path(args$output_dir, paste0(args$name, "metrics_knn_summary.csv"))
+csv_knn_pc  <- file.path(args$output_dir, paste0(args$name, "metrics_knn_per_cell.csv"))
 readr::write_csv(knn, csv_knn_sum)
 readr::write_csv(knn_pc, csv_knn_pc)
 
 # Render report
 rmarkdown::render(
 input = file.path(get_script_dir(), "metric_collector.Rmd"),
-output_file = paste0(args$name, "_metrics_report.html"),
+output_file = paste0(args$name, "metrics_report.html"),
 output_dir = args$output_dir,
 params = list(
   dataset_name = args$name,
@@ -124,4 +73,4 @@ params = list(
 envir = new.env(parent = globalenv())
 )
 
-cat("Report written to:", file.path(args$output_dir, paste0(args$name, "_metrics_report.html")), "\n")
+cat("Report written to:", file.path(args$output_dir, paste0(args$name, "metrics_report.html")), "\n")
