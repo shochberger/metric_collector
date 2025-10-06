@@ -12,7 +12,6 @@ output:
     df_print: kable 
     theme: lumen
 params:
-  dataset_name: NULL 
   dummy: NULL
   knn: NULL
   knn_pc: NULL 
