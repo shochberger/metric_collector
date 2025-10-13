@@ -1,5 +1,9 @@
 #!/usr/bin/env Rscript
 
+# Background correction metrics report
+# Inputs: dummy (JSON->tibble), knn (scores.rds bind), knn_pc (percell.rds bind).
+# Renders Rmd file that shows dummy summary table, kNN summary table, and per-cell overlap boxplot by k.
+
 library(argparse)
 library(jsonlite)
 library(tibble)
@@ -16,14 +20,20 @@ p$add_argument("--metrics.percell", nargs = "+", dest = "percell_fps", required 
 args <- p$parse_args()
 dir.create(args$output_dir, recursive = TRUE, showWarnings = FALSE)
 
-dataset_from_fp <- function(fp) sub("\\..*$", "", basename(fp))
+#Directory of where script lives (so Rmd sits beside it)
+get_script_dir <- function() {
+  ca <- commandArgs(trailingOnly = FALSE)
+  i <- grep("^--file=", ca)
+  if (length(i) == 1) return(dirname(normalizePath(sub("^--file=", "", ca[i]))))
+  normalizePath(getwd())
+}
 
-# Load dummy metric (kept as-is)
+# Load dummy metric
 dummy <- read_json(args$dummy_json, simplifyVector = TRUE) %>%
   as_tibble() %>%
-  mutate(dataset = dataset_from_fp(args$dummy_json))
+  mutate(dataset = dataset_from_fp(args$name))
 
-# Load kNN metrics (summary) -- now from metrics.scores
+# Load kNN summary (scores)
 knn <- bind_rows(lapply(args$scores_fps, function(fp) {
   df <- as_tibble(readRDS(fp))
   if (!"dataset" %in% names(df)) df$dataset <- args$name
@@ -35,7 +45,7 @@ knn <- bind_rows(lapply(args$scores_fps, function(fp) {
     overlap = as.numeric(overlap)
   )
 
-# Load per-cell metrics -- now from metrics.percell
+# Load kNN per-cell
 knn_pc <- bind_rows(lapply(args$percell_fps, function(fp) {
   df <- as_tibble(readRDS(fp))
   if (!"dataset" %in% names(df)) df$dataset <- args$name
@@ -46,15 +56,7 @@ knn_pc <- bind_rows(lapply(args$percell_fps, function(fp) {
     frac = as.numeric(frac)
   )
 
-# helper: where this script lives
-get_script_dir <- function() {
-  ca <- commandArgs(trailingOnly = FALSE)
-  i <- grep("^--file=", ca)
-  if (length(i) == 1) return(dirname(normalizePath(sub("^--file=", "", ca[i]))))
-  normalizePath(getwd())
-}
-
-# Render report (unchanged)
+# Render report
 rmarkdown::render(
   input = file.path(get_script_dir(), "metric_collector.Rmd"),
   output_file = "metrics_report.html",

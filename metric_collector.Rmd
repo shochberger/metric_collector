@@ -34,11 +34,11 @@ knn_pc <- params$knn_pc
 if (nrow(dummy) == 0) {
   cat("No dummy metrics available.\n")
 } else {
-  dummy |>
-    dplyr::select(dataset, n_cells, seed, mean_abs_diff, median_abs_diff, p95_abs_diff) |>
+  dummy %>%
+    dplyr::select(dataset, method, n_cells, seed, mean_abs_diff, median_abs_diff, p95_abs_diff) %>%
     dplyr::mutate(
       dplyr::across(dplyr::contains("abs_diff"), ~ round(.x, 6))
-    ) |>
+    ) %>%
     knitr::kable(caption = "Dummy metrics")
 }
 
@@ -62,8 +62,8 @@ df_pc <- knn_pc
 df_pc$k    <- factor(as.integer(df_pc$k), levels = sort(unique(as.integer(df_pc$k))))
 df_pc$frac <- as.numeric(df_pc$frac)
 
-summ_pc <- df_pc |>
-  dplyr::group_by(k) |>
+summ_pc <- df_pc %>%
+  dplyr::group_by(k) %>%
   dplyr::summarise(n = dplyr::n(), .groups = "drop")
 
 ggplot2::ggplot(df_pc, ggplot2::aes(x = k, y = frac)) +
@@ -74,11 +74,6 @@ ggplot2::ggplot(df_pc, ggplot2::aes(x = k, y = frac)) +
     outlier.alpha = 0.6,
     color = "grey20"
   ) +
-  # blue median line overlay
-  ggplot2::stat_summary(
-    fun = stats::median, geom = "crossbar",
-    width = 0.5, fatten = 0, color = "orange", linewidth = 0.6
-  ) +
   ggplot2::geom_text(
     data = summ_pc, ggplot2::aes(y = 0.86, label = paste0("n=", n)),
     vjust = 1, size = 3
@@ -86,6 +81,6 @@ ggplot2::ggplot(df_pc, ggplot2::aes(x = k, y = frac)) +
   ggplot2::coord_cartesian(ylim = c(0.85, 1.00)) +
   ggplot2::scale_y_continuous(labels = function(x) paste0(x*100, "%")) +
   ggplot2::labs(title = "Per-cell fractional overlap by k", x = "k", y = "Fractional overlap") +
-  ggplot2::theme_classic()
+  ggplot2::theme_minimal()
 ```
 
