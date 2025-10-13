@@ -4,7 +4,6 @@ library(argparse)
 library(jsonlite)
 library(tibble)
 library(dplyr)
-#library(readr)
 library(rmarkdown)
 
 # CLI
@@ -20,30 +19,54 @@ dir.create(args$output_dir, recursive = TRUE, showWarnings = FALSE)
 dataset_from_fp <- function(fp) sub("\\..*$", "", basename(fp))
 
 # Load dummy metric
+#dummy <- read_json(args$dummy_json, simplifyVector = TRUE) %>%
+#  as_tibble() %>%
+#  mutate(dataset = dataset_from_fp(args$dummy_json))
+
 dummy <- read_json(args$dummy_json, simplifyVector = TRUE) %>%
   as_tibble() %>%
-  mutate(dataset = dataset_from_fp(args$dummy_json))
+  mutate(dataset = args$name)
 
 # Load kNN metrics  (args$knn_summary: vector of FILE paths)
+#knn <- bind_rows(lapply(args$knn_summary, function(fp) {
+#  stopifnot(file.exists(fp))
+#  df <- readRDS(fp)
+#  k_dir <- basename(dirname(fp))                         # "k-15"
+#  df$k <- suppressWarnings(as.integer(sub("^k-", "", k_dir)))
+#  df$dataset <- dataset_from_fp(fp)
+#  df
+#}))
+
 knn <- bind_rows(lapply(args$knn_summary, function(fp) {
-  stopifnot(file.exists(fp))
-  df <- readRDS(fp)
-  k_dir <- basename(dirname(fp))                         # "k-15"
-  df$k <- suppressWarnings(as.integer(sub("^k-", "", k_dir)))
-  df$dataset <- dataset_from_fp(fp)
+  df <- as_tibble(readRDS(fp))
+  if (!"dataset" %in% names(df)) df$dataset <- args$name
   df
-}))
+})) |>
+  mutate(
+    k       = as.integer(k),
+    ndim    = as.integer(ndim),
+    overlap = as.numeric(overlap)
+  )
 
 # Load per-cell metrics  (args$knn_percell: vector of FILE paths)
-knn_pc <- bind_rows(lapply(args$knn_percell, function(fp) {
-  stopifnot(file.exists(fp))
-  df <- readRDS(fp)
-  k_dir <- basename(dirname(fp))                         # "k-15"
-  df$k <- suppressWarnings(as.integer(sub("^k-", "", k_dir)))
-  df$dataset <- dataset_from_fp(fp)
-  df
-}))
+#knn_pc <- bind_rows(lapply(args$knn_percell, function(fp) {
+#  stopifnot(file.exists(fp))
+#  df <- readRDS(fp)
+#  k_dir <- basename(dirname(fp))                         # "k-15"
+#  df$k <- suppressWarnings(as.integer(sub("^k-", "", k_dir)))
+#  df$dataset <- dataset_from_fp(fp)
+#  df
+#}))
 
+knn_pc <- bind_rows(lapply(args$knn_percell, function(fp) {
+  df <- as_tibble(readRDS(fp))
+  if (!"dataset" %in% names(df)) df$dataset <- args$name
+  df
+})) |>
+  mutate(
+    k    = as.integer(k),
+    frac = as.numeric(frac)
+  )
 
 # helper: where this script lives
 get_script_dir <- function() {
