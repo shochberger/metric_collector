@@ -31,7 +31,7 @@ get_script_dir <- function() {
 # Load dummy metric
 dummy <- read_json(args$dummy_json, simplifyVector = TRUE) %>%
   as_tibble() %>%
-  mutate(dataset = dataset_from_fp(args$name))
+  mutate(dataset = (args$name))
 
 # Load kNN summary (scores)
 knn <- bind_rows(lapply(args$scores_fps, function(fp) {
